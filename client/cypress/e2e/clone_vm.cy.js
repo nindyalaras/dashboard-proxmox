@@ -13,7 +13,7 @@ describe('E2E Testing: Clone VM', () => {
       .contains('Mulai')
       .click();
 
-    // Tunggu list template muncul dulu (pastikan fetch selesai)
+    // Tunggu list template muncul dulu 
     cy.get('table tbody tr', { timeout: 10000 }).should('have.length.greaterThan', 0);
   });
 
