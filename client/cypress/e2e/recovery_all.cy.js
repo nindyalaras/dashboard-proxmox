@@ -48,47 +48,47 @@ describe('E2E TESTING: Recovery All VM (PBS Auto Assign New VM ID)', () => {
       });
   });
 
-//  it('Berhasil recovery all backup VM dari PBS dan menampilkan mapping serta log', () => {
-//    loginDashboard();
+  it('Berhasil recovery all backup VM dari PBS dan menampilkan mapping serta log', () => {
+    loginDashboard();
     // Refresh backup list
-//    cy.contains('Refresh List').click();
-//    cy.contains('VMID:', { timeout: 15000 }).should('exist');
+    cy.contains('Refresh List').click();
+    cy.contains('VMID:', { timeout: 15000 }).should('exist');
 
-//    cy.get('button').contains('Recover ALL Backup').click();
+    cy.get('button').contains('Recover ALL Backup').click();
 
     // Tunggu hasil recovery tampil
-//    cy.contains('Recovery all backup berhasil!', { timeout: 120000 }).should('exist');
-//    cy.contains('Mapping Backup ke VM Baru:').should('exist');
+    cy.contains('Recovery all backup berhasil!', { timeout: 120000 }).should('exist');
+    cy.contains('Mapping Backup ke VM Baru:').should('exist');
 
-//    cy.get('ul').find('li').should('have.length.greaterThan', 0);
+    cy.get('ul').find('li').should('have.length.greaterThan', 0);
 
-//    cy.get('ul li').each(($li) => {
-//      const text = $li.text();
-//     if (text.includes("Backup VMID")) {
-//        expect(text).to.match(/Backup VMID \d+ → VMID baru \d+/);
-//      }
-//    });
+    cy.get('ul li').each(($li) => {
+      const text = $li.text();
+     if (text.includes("Backup VMID")) {
+        expect(text).to.match(/Backup VMID \d+ → VMID baru \d+/);
+      }
+    });
 
-//    cy.contains('Log Recovery (Ansible Output)').click();
-//    cy.get('details pre').should('exist');
-//    cy.get('details pre').invoke('text').should('not.contain', 'FAILED');
-//  });
+    cy.contains('Log Recovery (Ansible Output)').click();
+    cy.get('details pre').should('exist');
+    cy.get('details pre').invoke('text').should('not.contain', 'FAILED');
+  });
 
-//  it('Menampilkan error jika tidak ada backup sama sekali', () => {
-//    loginDashboard();
-//    cy.contains('Refresh List').click();
-//    cy.contains('VMID:', { timeout: 15000 }).should('exist');
+  it('Menampilkan error jika tidak ada backup sama sekali', () => {
+    loginDashboard();
+    cy.contains('Refresh List').click();
+    cy.contains('VMID:', { timeout: 15000 }).should('exist');
 
-//    cy.intercept('POST', '/api/recover-all-backup', {
-//      statusCode: 400,
-//      body: { error: 'Tidak ada backup yang tersedia' }
-//    }).as('failRecoverAll');
+    cy.intercept('POST', '/api/recover-all-backup', {
+      statusCode: 400,
+      body: { error: 'Tidak ada backup yang tersedia' }
+    }).as('failRecoverAll');
 
-//    cy.get('button').contains('Recover ALL Backup').click();
-//    cy.wait('@failRecoverAll');
-//    cy.contains('Recovery all gagal').should('exist');
-//    cy.contains('Tidak ada backup yang tersedia').should('exist');
-//  });
+    cy.get('button').contains('Recover ALL Backup').click();
+    cy.wait('@failRecoverAll');
+    cy.contains('Recovery all gagal').should('exist');
+    cy.contains('Tidak ada backup yang tersedia').should('exist');
+  });
 
   it('Menampilkan pesan error jika Proxmox unreachable', () => {
     loginDashboard();
