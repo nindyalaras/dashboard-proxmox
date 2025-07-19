@@ -26,7 +26,6 @@ describe('E2E TESTING: Start Multiple VM & Bulk Start All VM', () => {
 
     cy.wait(1000);
     cy.get('.alert').invoke('text').then((text) => {
-      // Cek dua hasil "VM xxx: Berhasil"
       expect(text).to.include('VM 105: Berhasil');
       expect(text).to.include('VM 104: Berhasil');
     });
