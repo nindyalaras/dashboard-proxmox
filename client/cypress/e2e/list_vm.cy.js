@@ -18,7 +18,7 @@ describe('E2E TESTING: List VM Proxmox', () => {
       .click();
 
     // Tunggu proses load VM
-    cy.wait(10000); // bisa di-tweak sesuai kecepatan backend lo
+    cy.wait(10000); 
   });
 
   it('Menampilkan daftar semua VM lengkap (ID, status, IP) dan jumlahnya valid', () => {
@@ -40,7 +40,6 @@ describe('E2E TESTING: List VM Proxmox', () => {
         cy.wrap($row).find('td').eq(1).invoke('text').should('include', vm.status);
         // IP Address
         cy.wrap($row).find('td').eq(2).invoke('text').then((ipText) => {
-          // Kosongkan/italic kalau status stopped atau tidak ada IP
           if (['VM is off', 'No IP', 'No IP or guest agent not active'].includes(vm.ip)) {
             expect(ipText.trim()).to.match(/VM is off|No IP|not active/);
           } else {
