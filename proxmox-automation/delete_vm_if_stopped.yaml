@@ -1,0 +1,45 @@
+---
+- name: Get status of VM {{ vmid }}
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/{{ node }}/qemu/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken {{ token_id }}={{ token_value }}"
+    validate_certs: no
+  register: vm_status
+  failed_when: false
+  ignore_errors: yes
+
+- name: VM tidak ditemukan
+  debug:
+    msg: "DELETE_RESULT: {{ vmid }} - VM tidak ditemukan atau sudah dihapus"
+  when: vm_status.json.data is not defined or (vm_status.json.data is not mapping)
+
+- name: VM masih menyala
+  debug:
+    msg: "DELETE_RESULT: {{ vmid }} - VM masih menyala dan tidak dihapus"
+  when:
+    - vm_status.json.data is defined
+    - vm_status.json.data is mapping
+    - vm_status.json.data.status == "running"
+
+- name: Hapus VM jika sudah stopped
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/{{ node }}/qemu/{{ vmid }}"
+    method: DELETE
+    headers:
+      Authorization: "PVEAPIToken {{ token_id }}={{ token_value }}"
+    validate_certs: no
+  register: delete_result
+  when:
+    - vm_status.json.data is defined
+    - vm_status.json.data is mapping
+    - vm_status.json.data.status == "stopped"
+
+- name: Konfirmasi penghapusan
+  debug:
+    msg: "DELETE_RESULT: {{ vmid }} - VM berhasil dihapus"
+  when:
+    - vm_status.json.data is defined
+    - vm_status.json.data is mapping
+    - vm_status.json.data.status == "stopped"

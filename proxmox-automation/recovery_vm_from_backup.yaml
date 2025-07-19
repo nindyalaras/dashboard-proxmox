@@ -1,0 +1,49 @@
+- name: Recovery banyak VM dari backup Proxmox pakai API
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    proxmox_host: "10.91.0.184"
+    proxmox_port: "8006"
+    username: "root@pam"
+    password: "nadnin123"
+    storage_target: "local-lvm"
+
+  tasks:
+    - name: Login ke Proxmox untuk dapat Ticket & CSRF Token
+      uri:
+        url: "https://{{ proxmox_host }}:{{ proxmox_port }}/api2/json/access/ticket"
+        method: POST
+        validate_certs: no
+        body_format: form-urlencoded
+        body:
+          username: "{{ username }}"
+          password: "{{ password }}"
+      register: login_response
+
+    - name: Set faktur cookie dan CSRF token
+      set_fact:
+        pve_ticket: "{{ login_response.json.data.ticket }}"
+        csrf_token: "{{ login_response.json.data.CSRFPreventionToken }}"
+
+    - name: Fetch daftar file backup yang ada
+      uri:
+        url: "https://{{ proxmox_host }}:{{ proxmox_port }}/api2/json/nodes/nadnin/storage/local/content"
+        method: GET
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ csrf_token }}"
+        validate_certs: no
+      register: backup_list
+
+    - name: Filter backup file bertipe vzdump-qemu
+      set_fact:
+        available_backups: "{{ backup_list.json.data | selectattr('content', 'equalto', 'backup') | selectattr('volid', 'search', '^local:backup/vzdump-qemu') | list }}"
+
+    - name: Simpan daftar backup yang tersedia ke file JSON
+      copy:
+        content: "{{ available_backups | to_nice_json }}"
+        dest: backup_list.json
+
+    - name: Debug daftar backup yang tersedia
+      debug:
+        var: available_backups

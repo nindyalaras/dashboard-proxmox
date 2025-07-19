@@ -1,0 +1,57 @@
+---
+- name: Get status and IP (if running)
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu/{{ item.vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    validate_certs: no
+  register: status_result
+  failed_when: false
+  ignore_errors: yes
+
+- set_fact:
+    vm_status: "{{ status_result.json.data.status if status_result.json.data is defined else 'unknown' }}"
+    vm_id: "{{ item.vmid }}"
+    has_data: "{{ status_result.json.data is defined }}"
+    is_running: "{{ status_result.json.data.status == 'running' if status_result.json.data is defined else false }}"
+
+- name: Get IP only if running
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu/{{ item.vmid }}/agent/network-get-interfaces"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    validate_certs: no
+  register: guest_info
+  failed_when: false
+  when: is_running
+
+- set_fact:
+    guest_ip: >-
+      {% if guest_info.json.data is defined and guest_info.json.data is not none %}
+        {{
+          guest_info.json.data.result
+          | rejectattr('name', 'search', '^(lo|Loopback)')
+          | selectattr('ip-addresses', 'defined')
+          | map(attribute='ip-addresses')
+          | list
+          | map('selectattr', 'ip-address-type', 'equalto', 'ipv4')
+          | map('map', attribute='ip-address')
+          | sum(start=[])
+          | reject('search', '^127\\.|^169\\.|^0\\.|^fe80::')
+          | list
+          | first
+        }}
+      {% else %}
+        No IP or guest agent not active
+      {% endif %}
+  when: is_running and guest_info.json is defined
+
+- set_fact:
+    guest_ip: "VM is off"
+  when: not is_running
+
+- name: Output info
+  debug:
+    msg: "VM_INFO: {{ vm_id }} - {{ vm_status }} - {{ guest_ip }}"

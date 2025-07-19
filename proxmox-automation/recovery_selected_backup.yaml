@@ -1,0 +1,13 @@
+- name: Restore VM dari Backup PBS
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    backup_list_user: []
+    vmid_list_user: []
+
+  tasks:
+    - name: Restore setiap backup ke VMID baru
+      include_tasks: restore_single_vm.yaml
+      loop: "{{ backup_list_user | zip(vmid_list_user) | list }}"
+      loop_control:
+        loop_var: backup_vmid_pair

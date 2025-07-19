@@ -1,0 +1,17 @@
+- name: Jalankan restore VM dari PBS
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    body_format: form-urlencoded
+    body:
+      vmid: "{{ backup_vmid_pair.1 | int }}"
+      archive: "{{ backup_vmid_pair.0 }}"
+      storage: "local-lvm"
+    validate_certs: no
+  register: restore_result
+
+- name: Debug hasil restore
+  debug:
+    msg: "RESTORE_RESULT: VMID {{ backup_vmid_pair.1 }} - {{ restore_result.json }}"

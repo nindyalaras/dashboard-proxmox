@@ -1,0 +1,32 @@
+---
+- name: List all VMs and IPs (if running)
+  hosts: proxmox
+  gather_facts: no
+
+  tasks:
+    - name: Get list of VMs
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        validate_certs: no
+      register: vm_list
+
+    - name: Fetch info for each VM
+      include_tasks: fetch_vm_info.yaml
+      loop: >-
+        {{
+          (
+            vm_list.json.data
+            | rejectattr('template', 'defined')
+            + (
+              vm_list.json.data
+              | selectattr('template', 'defined')
+              | rejectattr('template', 'equalto', 1)
+            )
+          ) | sort(attribute='vmid')
+        }}
+      loop_control:
+        loop_var: item
+

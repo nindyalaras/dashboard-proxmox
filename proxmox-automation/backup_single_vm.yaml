@@ -1,0 +1,19 @@
+- name: Backup single VM using PBS
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    vmid: ""
+  tasks:
+    - name: Backup VM to PBS incremental
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/vzdump"
+        method: POST
+        headers:
+          Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        body_format: form-urlencoded
+        body:
+          vmid: "{{ vmid }}"
+          mode: snapshot
+          storage: pbs-nadnin      # GANTI jadi ID storage PBS lo di Proxmox
+          compress: zstd
+        validate_certs: no

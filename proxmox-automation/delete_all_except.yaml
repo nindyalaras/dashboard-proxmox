@@ -1,0 +1,38 @@
+---
+- name: Delete all VMs except excluded ones
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    node: "nadnin"
+    token_id: "root@pam!my-dashboard-id"
+    token_value: "f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    excluded_ids: [103,107,108]
+  tasks:
+    - name: Get list of all VMs
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/cluster/resources?type=vm"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken {{ token_id }}={{ token_value }}"
+        validate_certs: no
+      register: all_vms
+
+    - name: Filter VM IDs (exclude 103, 107, 108)
+      set_fact:
+        filtered_vm_ids: >-
+        filtered_vm_ids: >-
+          {{
+            all_vms.json.data
+            | selectattr('vmid', 'defined')
+            | selectattr('type', 'equalto', 'qemu')
+            | rejectattr('template', 'equalto', 1)
+            | map(attribute='vmid')
+            | difference(excluded_ids)
+          }}
+
+
+    - name: Delete eligible VMs
+      include_tasks: delete_vm_if_stopped.yaml
+      loop: "{{ filtered_vm_ids }}"
+      loop_control:
+        loop_var: vmid

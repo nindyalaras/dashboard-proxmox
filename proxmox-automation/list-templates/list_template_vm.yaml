@@ -1,0 +1,46 @@
+- name: Ambil daftar template VM lengkap
+  hosts: proxmox
+  gather_facts: no
+  tasks:
+    - name: Ambil semua VM dari Proxmox API
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        validate_certs: no
+      register: vm_list_response
+
+    - name: Filter hanya template VM
+      set_fact:
+        template_vms: "{{ vm_list_response.json.data | selectattr('template', 'defined') | selectattr('template', 'equalto', 1) | list }}"
+
+    - name: Ambil config dari tiap template
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu/{{ item.vmid }}/config"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        validate_certs: no
+      loop: "{{ template_vms }}"
+      register: template_configs
+
+    - name: Inisialisasi list kosong
+      set_fact:
+        template_vm_info: []
+
+    - name: Gabungkan VMID, name, dan ostype ke dalam list baru
+      set_fact:
+        template_vm_info: "{{ template_vm_info + [ { 'vmid': item.0.vmid, 'name': item.0.name, 'ostype': item.1.json.data.ostype | default('unknown') } ] }}"
+      with_together:
+        - "{{ template_vms }}"
+        - "{{ template_configs.results }}"
+
+    - name: Buat variabel final_template_data dari template_vm_info
+      set_fact:
+        final_template_data: "{{ template_vm_info }}"
+
+    - name: Simpan ke file JSON
+      copy:
+        content: "{{ final_template_data | to_nice_json }}"
+        dest: "./template_vm_info.json"

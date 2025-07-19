@@ -1,0 +1,1 @@
+38 14 * * * cd /home/nadnin/dashboard-proxmox/proxmox-automation && /usr/bin/ansible-playbook -i inventory.ini backup_multiple_idle_wrapper.yaml --extra-vars "vm_ids=[104] backup_time_expected='14:38' preset_schedule='daily'" >> ~/backup_logs/backup_idle.log 2>&1

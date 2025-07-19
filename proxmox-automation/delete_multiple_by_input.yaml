@@ -1,0 +1,14 @@
+---
+- name: Delete multiple VMs based on user input
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    node: "nadnin"
+    token_id: "root@pam!my-dashboard-id"
+    token_value: "f2a79cbf-54c7-423e-a353-f1834f5c9471"
+  tasks:
+    - name: Loop through each VM ID
+      include_tasks: delete_vm_if_stopped.yaml
+      loop: "{{ vm_ids }}"
+      loop_control:
+        loop_var: vmid

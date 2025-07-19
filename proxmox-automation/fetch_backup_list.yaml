@@ -1,0 +1,18 @@
+- name: Update backup_list.json dari PBS API
+  hosts: proxmox
+  gather_facts: no
+  tasks:
+
+    - name: Ambil daftar snapshots dari datastore PBS
+      uri:
+        url: "https://10.91.7.172:8007/api2/json/admin/datastore/pbs-disk/snapshots"
+        method: GET
+        headers:
+          Authorization: "PBSAPIToken=root@pam!dashboard:38794c65-41a9-4234-b4af-d11752564beb"
+        validate_certs: no
+      register: snapshot_list
+
+    - name: Simpan daftar snapshot ke backup_list.json
+      copy:
+        content: "{{ snapshot_list.json.data | to_nice_json }}"
+        dest: "/home/nadnin/dashboard-proxmox/proxmox-automation/backup_list.json"

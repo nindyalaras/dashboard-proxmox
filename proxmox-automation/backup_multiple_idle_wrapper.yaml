@@ -1,0 +1,18 @@
+- name: Backup VM jika idle dan sesuai jadwal
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    vm_ids: []  # akan diisi dari user
+    backup_time_expected: ""  # input waktu user (format "HH:MM")
+    preset_schedule: ""  # contoh: "daily", "mon-fri", "saturday", "monthly", "yearly"
+
+  tasks:
+    - name: Loop semua VM yang dijadwalkan
+      include_tasks: check_idle_and_schedule.yaml
+      loop: "{{ vm_ids }}"
+      loop_control:
+        loop_var: vmid_item
+      vars:
+        vmid: "{{ vmid_item }}"
+        backup_time_expected: "{{ backup_time_expected }}"
+        preset_schedule: "{{ preset_schedule }}"

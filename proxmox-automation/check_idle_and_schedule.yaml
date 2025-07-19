@@ -1,0 +1,122 @@
+- name: Set default is_idle ke false
+  set_fact:
+    is_idle: false
+
+- name: Ambil status VM pertama
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    validate_certs: no
+  register: vm_status_1
+
+- name: Delay 7 detik sebelum ambil status lagi
+  pause:
+    seconds: 7
+
+- name: Ambil status VM kedua
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    validate_certs: no
+  register: vm_status_2
+
+- name: Hitung apakah idle (jika stopped atau CPU rendah dan disk tidak aktif)
+  set_fact:
+    is_idle: >-
+      {{
+        (vm_status_2.json.data.cpu | float) < 0.1 and
+        ((vm_status_2.json.data.diskread | int) - (vm_status_1.json.data.diskread | int)) <= 1048576 and
+        ((vm_status_2.json.data.diskwrite | int) - (vm_status_1.json.data.diskwrite | int)) <= 1048576
+      }}
+
+- name: Debug hasil idle
+  debug:
+    msg: >
+      VM {{ vmid }} - CPU: {{ vm_status_2.json.data.cpu }} - Perubahan Disk Read: {{ ((vm_status_2.json.data.diskread | int) - (vm_status_1.json.data.diskread | int)) / 1048576 | round(2) }} MB,
+      Disk Write: {{ ((vm_status_2.json.data.diskwrite | int) - (vm_status_1.json.data.diskwrite | int)) / 1048576 | round(2) }} MB,
+      is_idle: {{ is_idle }}
+
+- name: Ambil waktu sekarang
+  command: date +%s
+  register: current_time_epoch
+
+- name: Ambil waktu sekarang (menit dan jam untuk preset-preset tanpa jam spesifik)
+  command: date +%M:%H
+  register: current_minute_hour
+
+- name: Konversi waktu backup (jika preset pakai jam spesifik)
+  shell: date -d "$(date +%Y-%m-%d) {{ backup_time_expected }}" +%s
+  register: target_time_epoch
+  when: preset_schedule not in ['every-hour', 'every-30-minutes', 'every-2-hours']
+
+- name: Hitung selisih waktu (untuk preset dengan jam)
+  set_fact:
+    time_difference: "{{ (current_time_epoch.stdout | int) - (target_time_epoch.stdout | int) }}"
+  when: preset_schedule not in ['every-hour', 'every-30-minutes', 'every-2-hours']
+
+- name: Set apakah waktunya sesuai
+  set_fact:
+    should_backup_time: >-
+      {% if preset_schedule in ['every-hour', 'every-30-minutes', 'every-2-hours'] %}
+        {% set mm, hh = current_minute_hour.stdout.split(':') %}
+        {{
+          (preset_schedule == 'every-hour')
+          or (preset_schedule == 'every-30-minutes' and mm | int in [0, 30])
+          or (preset_schedule == 'every-2-hours' and mm | int == 0 and (hh | int) is divisibleby 2)
+        }}
+      {% else %}
+        {{ (time_difference | int | abs) <= 300 }}
+      {% endif %}
+
+- name: Ambil nama hari sekarang
+  command: date +%a
+  register: current_day_raw
+
+- name: Konversi nama hari ke lowercase
+  set_fact:
+    current_day: "{{ current_day_raw.stdout | lower }}"
+
+- name: Set apakah preset sesuai
+  set_fact:
+    should_backup_preset: >-
+      {{
+        (preset_schedule in ['every-hour', 'every-30-minutes', 'every-2-hours']) or
+        (preset_schedule == 'daily') or
+        (preset_schedule == 'mon-fri' and current_day in ['mon', 'tue', 'wed', 'thu', 'fri']) or
+        (preset_schedule == 'saturday' and current_day == 'sat') or
+        (preset_schedule == 'monthly' and ansible_date_time.day == "01") or
+        (preset_schedule == 'yearly' and ansible_date_time.day == "01" and ansible_date_time.month == "01")
+      }}
+
+- name: Debug semua kondisi
+  debug:
+    msg: |
+      VM {{ vmid }}
+      is_idle: {{ is_idle }}
+      preset_schedule: {{ preset_schedule }}
+      should_backup_time: {{ should_backup_time }}
+      should_backup_preset: {{ should_backup_preset }}
+
+- name: Jalankan backup ke PBS kalau idle dan waktunya pas
+  uri:
+    url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/vzdump"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+    body_format: form-urlencoded
+    body:
+      vmid: "{{ vmid }}"
+      mode: snapshot
+      storage: pbs-nadnin
+      compress: zstd
+    validate_certs: no
+  when: is_idle and should_backup_time and should_backup_preset
+
+- name: Update backup_list.json setelah backup selesai
+  delegate_to: localhost
+  shell: ansible-playbook -i inventory.ini fetch_backup_list.yaml
+  when: is_idle and should_backup_time and should_backup_preset

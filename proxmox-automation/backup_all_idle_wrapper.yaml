@@ -1,0 +1,42 @@
+- name: Backup semua VM (kecuali template dan PBS) jika idle dan sesuai jadwal
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    backup_time_expected: ""     # contoh: "11:30" (optional untuk preset tertentu)
+    preset_schedule: ""           # contoh: "daily", "mon-fri", "saturday", "monthly", "yearly", "every-hour", "every-30-minutes", "every-2-hours"
+    pbs_vm_id: 107                # ID VM PBS yang harus di-exclude
+
+  tasks:
+    - name: Ambil daftar semua VM dari API
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        validate_certs: no
+      register: vm_list_response
+
+    - name: Ambil daftar VM ID valid (exclude template & PBS)
+      set_fact:
+        valid_vm_ids: >-
+          {{
+            vm_list_response.json.data
+            | selectattr('template', 'undefined')
+            | rejectattr('vmid', 'equalto', pbs_vm_id)
+            | map(attribute='vmid')
+            | list
+          }}
+
+    - name: Tampilkan VM ID valid
+      debug:
+        msg: "Akan backup VM ID: {{ valid_vm_ids }}"
+
+    - name: Loop dan backup semua VM valid
+      include_tasks: check_idle_and_schedule.yaml
+      loop: "{{ valid_vm_ids }}"
+      loop_control:
+        loop_var: vmid_item
+      vars:
+        vmid: "{{ vmid_item }}"
+        backup_time_expected: "{{ backup_time_expected }}"
+        preset_schedule: "{{ preset_schedule }}"

@@ -1,0 +1,17 @@
+[
+    {
+        "name": "Windows2",
+        "ostype": "win10",
+        "vmid": 106
+    },
+    {
+        "name": "Windows1",
+        "ostype": "win10",
+        "vmid": 101
+    },
+    {
+        "name": "Ubuntu2204",
+        "ostype": "l26",
+        "vmid": 102
+    }
+]

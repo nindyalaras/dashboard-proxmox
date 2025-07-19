@@ -1,0 +1,52 @@
+- name: Clone Proxmox VM dynamically
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    target_node: "nadnin"
+  tasks:
+    - name: Get list of VMs from Proxmox
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/{{ target_node }}/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+        validate_certs: no
+      register: vmlist
+
+    - name: Find highest VM ID
+      set_fact:
+        base_vm_id: "{{ (vmlist.json.data | map(attribute='vmid') | max) | int + 1 }}"
+
+    - name: Generate VM IDs and names
+      set_fact:
+        new_vms: |
+          {% set vms = [] %}
+          {% for i in range(vm_count | int) %}
+          {% set vm_id = (base_vm_id | int) + i %}
+          {% set vm_name = "vm-" ~ vm_id %}
+          {% set _ = vms.append({'newid': vm_id, 'name': vm_name}) %}
+          {% endfor %}
+          {{ vms }}
+
+    - name: Clone VM from template
+      uri:
+        url: "https://10.91.0.184:8006/api2/json/nodes/{{ target_node }}/qemu/{{ template_id }}/clone"
+        method: POST
+        headers:
+          Authorization: "PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          newid: "{{ item.newid }}"
+          name: "{{ item.name }}"
+          full: true
+        validate_certs: no
+      loop: "{{ new_vms }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: clone_result
+
+    - name: Show cloned VM ID
+      debug:
+        msg: "CLONED_VM: {{ item.name }}"
+      loop: "{{ new_vms }}"
