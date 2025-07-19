@@ -130,7 +130,7 @@ app.post('/api/delete', (req, res) => {
       return res.status(500).json({ error: stderr });
     }
 
-    // Ambil semua baris hasil DELETE_RESULT
+    // Ambil semua baris hasil 
     const regexLine = /DELETE_RESULT:.*$/gm;
     let results = stdout.match(regexLine) || [];
     results = results.map(line => line.replace(/"$/, "")); // hilangkan kutip dua di akhir baris
@@ -139,7 +139,7 @@ app.post('/api/delete', (req, res) => {
 });
 
 // ===============================
-// DELETE ALL VM (kecuali yang dikecualikan)
+// DELETE ALL VM 
 // ===============================
 app.post('/api/delete-all', (req, res) => {
   const cmd = `ansible-playbook -i ../proxmox-automation/inventory.ini ../proxmox-automation/delete_all_except.yaml`;
@@ -164,11 +164,10 @@ app.post('/api/delete-all', (req, res) => {
       });
     }
 
-    // Ambil semua baris hasil DELETE_RESULT
+    // Ambil semua baris hasil 
     const regexLine = /DELETE_RESULT:.*$/gm;
     let results = stdout.match(regexLine) || [];
 
-    // Hilangkan tanda kutip dua di akhir setiap baris (kalau ada)
     results = results.map(line => line.replace(/"$/, ""));
     res.json({ results });
   });
@@ -204,7 +203,7 @@ app.get('/api/list-array', (req, res) => {
       return res.status(500).json({ error: stderr || error.message });
     }
 
-    // Parse VM_INFO log lines into array
+    // Parse log lines into array
     const vmArray = [];
     let match;
     while ((match = VM_INFO_REGEX.exec(stdout)) !== null) {
@@ -303,7 +302,7 @@ app.post('/api/schedule-backup', (req, res) => {
 });
 
 // ===============================
-// BACKUP ALL VM (exclude PBS 107 & template)
+// BACKUP ALL VM 
 // ===============================
 app.post('/api/backup-all-vm', (req, res) => {
   const { backup_time, preset } = req.body;
@@ -391,7 +390,7 @@ app.post('/api/stop-backup', (req, res) => {
 
     await Log.create({
       action: 'stop-backup',
-      vm_id: '-', // atau bisa dikosongkan jika tidak spesifik ke VM
+      vm_id: '-', 
       status,
       message
     });
@@ -450,7 +449,7 @@ app.get('/api/list-schedule-backup', (req, res) => {
 // ===============================
 // LIST BACKUPS for RECOVERY
 // ===============================
-const moment = require('moment-timezone'); // pastikan sudah install: npm install moment-timezone
+const moment = require('moment-timezone'); 
 moment.locale('id'); // biar tanggal pakai bahasa Indo
 
 app.get('/api/list-backups', async (req, res) => {
@@ -486,7 +485,7 @@ app.get('/api/list-backups', async (req, res) => {
       }
 
       let [, storage, vmid, datetime_utc] = match;
-      // Pastikan datetime_utc tanpa .000, tambah Z
+      // Pastikan tanpa .000, tambah Z
       datetime_utc = datetime_utc + 'Z';
 
       // Convert UTC ke Jakarta
@@ -545,7 +544,7 @@ app.post('/api/recover', (req, res) => {
     return fixBackupName(fixed);
   });
 
-  // Compose extra-vars sebagai JSON (bukan list, bukan pakai kutip satu!)
+  // Compose extra-vars sebagai JSON 
   const extraVars = JSON.stringify({
     backup_list_user: cleanedBackups,
     vmid_list_user: vmids
@@ -554,7 +553,6 @@ app.post('/api/recover', (req, res) => {
   const cmd = `ansible-playbook -i ../proxmox-automation/inventory.ini ../proxmox-automation/recovery_selected_backup.yaml --extra-vars '${extraVars}'`;
 
   exec(cmd, async (error, stdout, stderr) => {
-    // Log dengan cleanedBackups yang pasti defined
     for (let i = 0; i < vmids.length; i++) {
       await Log.create({
         action: 'recovery',
@@ -578,7 +576,7 @@ app.post('/api/recover', (req, res) => {
 // ===============================
 app.post('/api/recover-all-backup', async (req, res) => {
   try {
-    // 1. Baca semua file backup
+    // Baca semua file backup
     const backupsPath = path.resolve(__dirname, '../proxmox-automation/backup_list.json');
     if (!fs.existsSync(backupsPath)) {
       return res.status(404).json({ error: 'backup_list.json tidak ditemukan' });
@@ -586,7 +584,7 @@ app.post('/api/recover-all-backup', async (req, res) => {
     const raw = fs.readFileSync(backupsPath, 'utf8');
     const backupList = JSON.parse(raw);
 
-    // Tambahan validasi backup kosong:
+    // Validasi backup kosong
     const validBackups = Array.isArray(backupList)
       ? backupList.filter(b => b && b['backup-id'])
       : [];
@@ -594,7 +592,7 @@ app.post('/api/recover-all-backup', async (req, res) => {
       return res.status(404).json({ error: 'Tidak ada backup yang tersedia untuk recovery.' });
     }
 
-    // 2. Group backup berdasarkan VMID, ambil backup terbaru per VMID
+    // Group backup berdasarkan VM ID, ambil backup terbaru per VM ID
     const backupMap = {};
     for (const backup of validBackups) {
       const vmid = backup['backup-id'];
@@ -602,7 +600,7 @@ app.post('/api/recover-all-backup', async (req, res) => {
         backupMap[vmid] = backup;
       }
     }
-    // List backup terbaru untuk tiap VMID (sorted by VMID)
+    // List backup terbaru untuk tiap VM ID (sorted by VM ID)
     const sortedVmid = Object.keys(backupMap).map(Number).sort((a, b) => a - b);
     const selectedBackups = sortedVmid.map(vmid => backupMap[vmid]);
 
@@ -614,7 +612,7 @@ app.post('/api/recover-all-backup', async (req, res) => {
       return `pbs-nadnin:backup/vm/${b['backup-id']}/${iso}`;
     });
 
-    // 3. Ambil VMID terakhir di Proxmox (agar VMID baru berurutan)
+    // Ambil VM ID terakhir di Proxmox (agar VM ID baru berurutan)
     const curlList = `curl -sk -H "Authorization: PVEAPIToken=root@pam!my-dashboard-id=f2a79cbf-54c7-423e-a353-f1834f5c9471" "https://10.91.0.184:8006/api2/json/nodes/nadnin/qemu"`;
     exec(curlList, async (err, stdout) => {
       if (err) return res.status(500).json({ error: 'Gagal fetch list VM Proxmox' });
@@ -624,13 +622,13 @@ app.post('/api/recover-all-backup', async (req, res) => {
       } catch (e) {
         return res.status(500).json({ error: 'Gagal parsing VM list' });
       }
-      // VMID terakhir
+      // VM ID terakhir
       let lastVmid = Math.max(...vmList.map(vm => Number(vm.vmid)), 100);
 
-      // 4. Generate VMID baru urut
+      // Generate VM ID baru urut
       const vmidListUser = selectedBackups.map((_, i) => lastVmid + 1 + i);
 
-      // 5. Jalankan playbook recovery
+      // Jalankan playbook recovery
       const extraVars = JSON.stringify({
         backup_list_user: backupFiles,
         vmid_list_user: vmidListUser
