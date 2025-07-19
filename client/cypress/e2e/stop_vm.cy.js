@@ -56,7 +56,7 @@ describe('E2E TESTING: Stop Multiple VM & Bulk Stop All VM', () => {
   });
 
   it('Bulk Stop All VM: Sukses', () => {
-    // Step 1: Jalankan bulk stop dari UI
+    // Jalankan bulk stop dari UI
     cy.get('.card-title')
       .contains('Bulk Stop Semua VM')
       .parents('.card')
@@ -66,16 +66,15 @@ describe('E2E TESTING: Stop Multiple VM & Bulk Stop All VM', () => {
     cy.wait(5000);
     cy.get('.alert').should('contain', '✔️: Stop berhasil');
 
-    // Step 2: Cek jumlah VM stopped via backend setelah proses
+    // Cek jumlah VM stopped via backend setelah proses
     cy.request('GET', 'http://localhost:8091/api/list').then((resp) => {
       const data = resp.body.output;
-      // Hitung jumlah baris VM_INFO: <id> - stopped
+      // Hitung jumlah baris 
       const stopped = (data.match(/VM_INFO: \d+ - stopped/g) || []).length;
       // Hitung total VM (running + stopped)
       const total = (data.match(/VM_INFO: \d+ - (running|stopped)/g) || []).length;
-      // Expect: minimal ada VM yang berhasil distop (nggak semua sudah stopped)
+      // Expect: minimal ada VM yang berhasil distop 
       expect(stopped).to.be.gte(1);
-      // Option: pastikan semua VM bukan template? (tinggal filter VM id excluded)
     });
   });
 
@@ -89,13 +88,11 @@ describe('E2E TESTING: Stop Multiple VM & Bulk Stop All VM', () => {
     cy.wait(2000);
     cy.get('.alert').should('contain', '❌: VM sudah dalam keadaan stopped');
 
-    // Exclude list, misal VM 103 adalah template (gak bisa stopped)
     const excluded = ['103'];
   
     cy.request('GET', 'http://localhost:8091/api/list').then((resp) => {
       const data = resp.body.output;
 
-      // Ambil semua VM_INFO: <id> - <status>
       const allMatches = Array.from(data.matchAll(/VM_INFO: (\d+) - (running|stopped)/g));
       // Filter yang bukan template
       const validVMs = allMatches.filter(m => !excluded.includes(m[1]));
@@ -105,14 +102,4 @@ describe('E2E TESTING: Stop Multiple VM & Bulk Stop All VM', () => {
       expect(stoppedVMs.length).to.equal(validVMs.length);
     });
   });
-
-//  it('Bulk Stop: Pengecualian VM 103, 107, 108', () => {
-//    cy.request('GET', 'http://localhost:8091/api/list').then((resp) => {
-//      const data = resp.body.output;
-//      expect(data).to.not.contain('VM_INFO: 103 - stopped');
-//      expect(data).to.not.contain('VM_INFO: 107 - stopped');
-//      expect(data).to.not.contain('VM_INFO: 108 - stopped');
-//    });
-//  });
-
 });
