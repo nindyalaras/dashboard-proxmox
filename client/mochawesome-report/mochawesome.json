@@ -1,0 +1,138 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 3,
+    "passes": 3,
+    "pending": 0,
+    "failures": 0,
+    "start": "2025-05-22T13:23:48.901Z",
+    "end": "2025-05-22T13:23:52.298Z",
+    "duration": 3397,
+    "testsRegistered": 3,
+    "passPercent": 100,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "398c0bca-d254-40e5-9c7f-bbd8aef9182e",
+      "title": "",
+      "fullFile": "cypress/e2e/login_logout.cy.js",
+      "file": "cypress/e2e/login_logout.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "b9a5ec70-9d89-4892-a7e7-93db33e498d8",
+          "title": "Login dan Logout Dashboard",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "Berhasil login dengan username & password benar",
+              "fullTitle": "Login dan Logout Dashboard Berhasil login dengan username & password benar",
+              "timedOut": null,
+              "duration": 830,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit('http://localhost:3000'); // Ganti kalau port-mu beda\n// Isi form login\ncy.get('input[placeholder=\"Username\"]').type('admin');\ncy.get('input[placeholder=\"Password\"]').type('tes123');\ncy.get('button').contains('Login').click();\n// Cek sudah masuk dashboard\ncy.contains('Proxmox Dashboard').should('exist');",
+              "err": {},
+              "uuid": "13eb9845-6f69-4141-bc34-e51a4071379e",
+              "parentUUID": "b9a5ec70-9d89-4892-a7e7-93db33e498d8",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Logout berhasil",
+              "fullTitle": "Login dan Logout Dashboard Logout berhasil",
+              "timedOut": null,
+              "duration": 669,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "// Harus sudah login sebelum tes ini\ncy.visit('http://localhost:3000');\ncy.get('input[placeholder=\"Username\"]').type('admin');\ncy.get('input[placeholder=\"Password\"]').type('tes123');\ncy.get('button').contains('Login').click();\n// Klik tombol logout\ncy.get('button').contains('Logout').click();\n// Harus balik ke halaman login\ncy.contains('Login Admin').should('exist');",
+              "err": {},
+              "uuid": "3462bdb1-bf61-4681-9848-feb0dcf90d95",
+              "parentUUID": "b9a5ec70-9d89-4892-a7e7-93db33e498d8",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Gagal login kalau password salah",
+              "fullTitle": "Login dan Logout Dashboard Gagal login kalau password salah",
+              "timedOut": null,
+              "duration": 627,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit('http://localhost:3000');\ncy.get('input[placeholder=\"Username\"]').type('admin');\ncy.get('input[placeholder=\"Password\"]').type('salahbanget');\ncy.get('button').contains('Login').click();\n// Muncul pesan error\ncy.contains('Password salah').should('exist');",
+              "err": {},
+              "uuid": "9f905499-3465-40a0-ab53-5b1f5aaef3b9",
+              "parentUUID": "b9a5ec70-9d89-4892-a7e7-93db33e498d8",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "13eb9845-6f69-4141-bc34-e51a4071379e",
+            "3462bdb1-bf61-4681-9848-feb0dcf90d95",
+            "9f905499-3465-40a0-ab53-5b1f5aaef3b9"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 2126,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.2.0"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.3"
+    },
+    "marge": {
+      "options": null,
+      "version": "6.2.0"
+    }
+  }
+}
