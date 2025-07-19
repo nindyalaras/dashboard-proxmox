@@ -2,9 +2,9 @@
   hosts: proxmox
   gather_facts: no
   vars:
-    backup_time_expected: ""     # contoh: "11:30" (optional untuk preset tertentu)
-    preset_schedule: ""           # contoh: "daily", "mon-fri", "saturday", "monthly", "yearly", "every-hour", "every-30-minutes", "every-2-hours"
-    pbs_vm_id: 107                # ID VM PBS yang harus di-exclude
+    backup_time_expected: ""     
+    preset_schedule: ""           
+    pbs_vm_id: 107                
 
   tasks:
     - name: Ambil daftar semua VM dari API
