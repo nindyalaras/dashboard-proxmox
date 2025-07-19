@@ -17,27 +17,26 @@ describe('E2E TESTING: Recovery Multiple VM from PBS', () => {
   }
 
   it('Berhasil recovery multiple VM terpilih', () => {
-    // Step 1: Login
+    // Login
     loginDashboard();
 
-    // Step 3: Klik Refresh List & tunggu isi muncul
+    // Klik Refresh List & tunggu isi muncul
     cy.contains('Refresh List').click();
 
-    // Step 4: Tunggu VMID/backup muncul (maks 10 detik)
     cy.contains('VMID:', { timeout: 10000 }).should('exist');
     cy.get('input[data-cy="input-recover-vmid"]', { timeout: 10000 }).should('exist');
 
-    // Step 5: Centang dua file backup pertama dari VM apapun
+    // Centang dua file backup pertama dari VM apapun
     cy.get('input[type="checkbox"]').eq(0).check();
     cy.get('input[type="checkbox"]').eq(1).check();
 
-    // Step 6: Isi VM ID baru, misal '120,121'
+    // Isi VM ID baru
     cy.get('input[data-cy="input-recover-vmid"]').type('109,110');
 
-    // Step 7: Klik tombol Recover Selected
+    // Klik tombol Recover Selected
     cy.get('button[type="submit"]').contains('Recover Selected').click();
 
-    // Step 8: Tunggu hasil recovery (status muncul)
+    // Tunggu hasil recovery 
     cy.get('.alert', { timeout: 20000 }).should('contain.text', 'Recovery berhasil').and('contain.text', '109').and('contain.text', '110');
   });
 
